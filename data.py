@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 import numpy as np
+import pandas as pd
 
 class UnemploymentSurvivalDataset(Dataset):
     def __init__(self, dataframe, censoring_rate=0.3, seed=42):
@@ -10,7 +11,7 @@ class UnemploymentSurvivalDataset(Dataset):
             censoring_rate: Probability of censoring for the '52 and over' bucket.
             seed: Random seed for reproducibility.
         """
-        self.df = dataframe.copy()
+        self.df = pd.read_csv(dataframe)
 
         # Map duration buckets to numeric midpoints
         self.duration_map = {
