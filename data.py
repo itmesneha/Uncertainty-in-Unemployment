@@ -1,10 +1,18 @@
 import torch
 from torch.utils.data import Dataset
+import numpy as np
 
 class UnemploymentSurvivalDataset(Dataset):
-    def __init__(self, dataframe):
+    def __init__(self, dataframe, censoring_rate=0.3, seed=42):
+        """
+        Args:
+            dataframe: Pandas DataFrame containing the data.
+            censoring_rate: Probability of censoring for the '52 and over' bucket.
+            seed: Random seed for reproducibility.
+        """
         self.df = dataframe.copy()
 
+        # Map duration buckets to numeric midpoints
         self.duration_map = {
             'under 5': 2.5,
             '5 to 9': 7,
@@ -14,7 +22,7 @@ class UnemploymentSurvivalDataset(Dataset):
             '25 to 29': 27,
             '30 to 39': 35,
             '40 to 51': 45.5,
-            '52 and over': 55
+            '52 and over': 55  # Treat as maximum observed duration
         }
         self.df['duration_numeric'] = self.df['duration'].map(self.duration_map)
 
@@ -24,7 +32,15 @@ class UnemploymentSurvivalDataset(Dataset):
         self.age_encoder = {v: i for i, v in enumerate(sorted(self.df['age'].unique()))}
         self.sex_encoder = {'male': 0, 'female': 1}
 
-        self.df['event'] = 1  # Assume observed
+        # Apply censoring only for '52 and over'
+        np.random.seed(seed)
+        self.df['is_censored'] = 0  # Default: not censored
+        mask_52_plus = self.df['duration'] == '52 and over'
+        self.df.loc[mask_52_plus, 'is_censored'] = np.random.binomial(1, censoring_rate, size=mask_52_plus.sum())
+
+        # Define event flag: 1 = observed, 0 = censored
+        self.df['event'] = 1 - self.df['is_censored']
+
 
     def __len__(self):
         return len(self.df)
@@ -37,8 +53,10 @@ class UnemploymentSurvivalDataset(Dataset):
         sex = self.sex_encoder[row['sex']]
 
         x = torch.tensor([year, qual, age, sex], dtype=torch.float32)
-        duration = torch.tensor(row['duration_numeric'], dtype=torch.float32).unsqueeze(0)
+        duration = torch.tensor(row['censored_duration'], dtype=torch.float32).unsqueeze(0)
         event = torch.tensor(row['event'], dtype=torch.float32).unsqueeze(0)
-        weight = torch.tensor(row['estimated_unemployed'], dtype=torch.float32).unsqueeze(0)  # ✅ add weight here
+        weight = torch.tensor(row['estimated_unemployed'], dtype=torch.float32).unsqueeze(0)
 
         return x, duration, event, weight
+
+
