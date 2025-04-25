@@ -37,18 +37,14 @@ def run_train(dataframe,
     model = BayesianHazardNN(input_dim=input_dim, hidden_dim=hidden_dim)
 
     # Training loop using your existing function
-    for batch in loader:
-        x_train, duration_train, event_train, weight_train = batch
-        model = train_bayesian_survival_model(
-            model,
-            x_train,
-            duration_train,
-            event_train,
-            weight_train,
-            epochs=epochs,
-            learning_rate=learning_rate,
-            print_every=print_every
-        )
+    
+    model = train_bayesian_survival_model(
+        model,
+        dataloader=loader,
+        epochs=epochs,
+        learning_rate=learning_rate,
+        print_every=print_every
+    )
 
     print("✅ Training finished successfully.")
     return model

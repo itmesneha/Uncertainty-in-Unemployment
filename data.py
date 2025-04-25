@@ -54,7 +54,7 @@ class UnemploymentSurvivalDataset(Dataset):
         sex = self.sex_encoder[row['sex']]
 
         x = torch.tensor([year, qual, age, sex], dtype=torch.float32)
-        duration = torch.tensor(row['censored_duration'], dtype=torch.float32).unsqueeze(0)
+        duration = torch.tensor(row['duration_numeric'], dtype=torch.float32).unsqueeze(0)
         event = torch.tensor(row['event'], dtype=torch.float32).unsqueeze(0)
         weight = torch.tensor(row['estimated_unemployed'], dtype=torch.float32).unsqueeze(0)
 
