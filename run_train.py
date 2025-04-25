@@ -54,6 +54,5 @@ def run_train(dataframe,
     return model
 
 if __name__ == "__main__":
-    dataframe = "data/unemployment_survival_data.csv"
-
+    dataframe = "datasets/unemployment_survival_data.csv"
     run_train(dataframe=dataframe)
