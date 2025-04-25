@@ -7,6 +7,7 @@ def train_bayesian_survival_model(model,
                                   dataloader,
                                   epochs=1000, 
                                   learning_rate=1e-3, 
+                                  device=torch.device("mps" if torch.backends.mps.is_available() else "cpu"),
                                   print_every=100):
     """
     Train a Bayesian Hazard Neural Network using Variational Inference.
@@ -30,6 +31,11 @@ def train_bayesian_survival_model(model,
         total_kl = 0
         for batch in dataloader:
             x_train, duration_train, event_train, weight_train = batch
+            x_train = x_train.to(device)
+            duration_train = duration_train.to(device)
+            event_train = event_train.to(device)
+            weight_train = weight_train.to(device)
+            
             optimizer.zero_grad()
 
             # Forward pass
