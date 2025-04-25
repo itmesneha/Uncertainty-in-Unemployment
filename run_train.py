@@ -1,3 +1,4 @@
+import torch
 from torch.utils.data import DataLoader
 
 from data import UnemploymentSurvivalDataset
@@ -28,6 +29,8 @@ def run_train(dataframe,
     Returns:
         Trained model.
     """
+    # Set the MPS device
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
     # Dataset and DataLoader initialization
     dataset = UnemploymentSurvivalDataset(dataframe, censoring_rate=censoring_rate)
@@ -35,20 +38,16 @@ def run_train(dataframe,
 
     # Initialize the model
     model = BayesianHazardNN(input_dim=input_dim, hidden_dim=hidden_dim)
-
+    model.to(device)
     # Training loop using your existing function
-    for batch in loader:
-        x_train, duration_train, event_train, weight_train = batch
-        model = train_bayesian_survival_model(
-            model,
-            x_train,
-            duration_train,
-            event_train,
-            weight_train,
-            epochs=epochs,
-            learning_rate=learning_rate,
-            print_every=print_every
-        )
+    
+    model = train_bayesian_survival_model(
+        model,
+        dataloader=loader,
+        epochs=epochs,
+        learning_rate=learning_rate,
+        print_every=print_every
+    )
 
     print("✅ Training finished successfully.")
     return model

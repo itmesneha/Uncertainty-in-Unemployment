@@ -4,21 +4,17 @@ import torch.optim as optim
 from loss import elbo_loss
 
 def train_bayesian_survival_model(model, 
-                                  x_train, 
-                                  duration_train, 
-                                  event_train, 
-                                  weight_train,
+                                  dataloader,
                                   epochs=1000, 
                                   learning_rate=1e-3, 
+                                  device=torch.device("mps" if torch.backends.mps.is_available() else "cpu"),
                                   print_every=100):
     """
     Train a Bayesian Hazard Neural Network using Variational Inference.
 
     Args:
         model (nn.Module): Your Bayesian Hazard Model (e.g., BayesianHazardNN).
-        x_train (torch.Tensor): Input covariates (shape: [batch_size, input_dim]).
-        duration_train (torch.Tensor): Duration/time-to-event data (shape: [batch_size, 1]).
-        event_train (torch.Tensor): Event indicator (1 = observed, 0 = censored) (shape: [batch_size, 1]).
+        dataloader (DataLoader): Dataloader containing the training data.
         epochs (int): Number of training epochs.
         learning_rate (float): Learning rate for optimizer.
         print_every (int): Frequency of printing loss during training.
@@ -31,21 +27,34 @@ def train_bayesian_survival_model(model,
 
     for epoch in range(epochs):
         model.train()
-        optimizer.zero_grad()
+        total_loss = 0
+        total_kl = 0
+        for batch in dataloader:
+            x_train, duration_train, event_train, weight_train = batch
+            x_train = x_train.to(device)
+            duration_train = duration_train.to(device)
+            event_train = event_train.to(device)
+            weight_train = weight_train.to(device)
+            
+            optimizer.zero_grad()
 
-        # Forward pass
-        lambda_pred = model(x_train)  # Predict hazard rates
-        kl_term = model.kl_loss()     # Compute KL divergence
+            # Forward pass
+            lambda_pred = model(x_train)  # Predict hazard rates
+            kl_term = model.kl_loss()     # Compute KL divergence
 
-        # ELBO loss
-        loss = elbo_loss(lambda_pred, duration_train, event_train, kl_term, weight_train)
+            # ELBO loss
+            loss = elbo_loss(lambda_pred, duration_train, event_train, kl_term, weight_train)
 
-        # Backpropagation
-        loss.backward()
-        optimizer.step()
+            # Backpropagation
+            loss.backward()
+            optimizer.step()
+
+            # Accumulate loss and KL
+            total_loss += loss.item()
+            total_kl += kl_term.item()
 
         # Logging
         if epoch % print_every == 0 or epoch == epochs - 1:
-            print(f"Epoch {epoch}, Loss: {loss.item()}, KL: {kl_term.item()}")
+            print(f"Epoch {epoch}, Loss: {total_loss / len(dataloader)}, KL: {total_kl / len(dataloader)}")
 
     return model
