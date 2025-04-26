@@ -3,10 +3,6 @@ from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
 
-import torch
-from torch.utils.data import Dataset
-import numpy as np
-import pandas as pd
 
 class UnemploymentSurvivalDataset(Dataset):
     def __init__(self, dataframe_path, censoring_rate=0.3, seed=42, normalize=True):
