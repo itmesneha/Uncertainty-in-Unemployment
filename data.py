@@ -62,7 +62,7 @@ class UnemploymentSurvivalDataset(Dataset):
 
 
     def __len__(self):
-        return 100
+        return len(self.df)
     
 
     def get_category_sizes(self):
