@@ -128,7 +128,8 @@ with pm.Model() as unemployment_model:
         max_treedepth=15,    
         cores=8,             
         chains = 4,
-        return_inferencedata=True
+        return_inferencedata=True,
+        idata_kwargs={"log_likelihood": True}
     )
 
     # Save trace
