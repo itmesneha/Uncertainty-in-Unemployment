@@ -77,6 +77,7 @@ observed_duration_log = np.log(midpoint)
 # Load saved posterior predictive samples (already in log space!)
 posterior_predictive_samples = np.load('models/lognormal_samples.npy')  
 
+# No exp!
 predicted_samples = np.median(posterior_predictive_samples, axis=0)
 
 # Process observed durations
@@ -84,11 +85,11 @@ lower = np.clip(lower, a_min=1e-3, a_max=None)
 upper = np.clip(upper, a_min=1e-3, a_max=None)
 midpoint = (lower + upper) / 2
 midpoint = np.clip(midpoint, a_min=1e-3, a_max=None)
-observed_durations = np.log(midpoint)
+observed_durations = np.log(midpoint)  # in log-weeks
 
-# Inverse transform to real weeks
-predicted_samples_real = np.exp(predicted_samples)
-observed_durations_real = np.exp(observed_durations)
+# Now compare observed_durations and predicted_samples directly
+all_pred_samples = posterior_predictive_samples.flatten()
+observed_durations_weeks = np.exp(observed_durations)
+check_model_fit(observed_durations_weeks, all_pred_samples, plot_path='plots/ppc_plot.png')
 
-# Now check model fit
-check_model_fit(observed_durations_real, predicted_samples_real, plot_path='plots/ppc_plot.png')
+logging.info('Model fit checking complete. Posterior Predictive Check plot saved to plots/ppc_plot.png')
