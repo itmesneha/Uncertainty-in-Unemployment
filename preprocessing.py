@@ -3,7 +3,9 @@ import pandas as pd
 import numpy as np
 import ipfn
 import logging
-# import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 # from sklearn.metrics import mean_absolute_error
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -187,6 +189,9 @@ if not np.allclose(prob_sums, 1.0, rtol=0.01):
 
 merged_df['estimated_unemployed'] = merged_df['joint_probability_qual_age_sex'] * merged_df['hybrid_probability']
 
+# Convert to integer
+merged_df['estimated_unemployed'] = merged_df['estimated_unemployed'].round().astype(int)
+
 logging.info("Final merged DataFrame preview:")
 logging.info(merged_df.tail(100))
 
@@ -196,3 +201,43 @@ logging.info(f"Final columns: {merged_df.columns.tolist()}")
 logging.info('Preprocessing complete.')
 merged_df.to_csv("datasets/unemployment_survival_data.csv", index=False)
 logging.info('Data saved to datasets/unemployment_survival_data.csv')
+
+pivot = merged_df.pivot_table(index='age', columns='sex', values='estimated_unemployed', aggfunc='mean')
+plt.figure(figsize=(10,6))
+sns.heatmap(pivot, annot=True, fmt=".0f", cmap='YlGnBu')
+plt.title("Mean Estimated Unemployed by Age and Sex")
+plt.ylabel("Age")
+plt.xlabel("Sex")
+plt.tight_layout()
+plt.savefig('plots/MeanEstimatedUnemployedByAgeAndSex_Heatmap.png')
+
+
+pivot = merged_df.pivot_table(index='age', columns='sex', values='estimated_unemployed', aggfunc='mean')
+ax = pivot.plot(kind='bar', figsize=(10,6))
+plt.title("Mean Estimated Unemployed by Age and Sex")
+plt.ylabel("Mean Estimated Unemployed")
+plt.xticks(rotation=0)
+# plt.show()
+plt.savefig('plots/MeanEstimatedUnemployedByAgeAndSex.png')
+
+plt.figure(figsize=(12,6))
+sns.boxplot(x='highest_qualification', y='estimated_unemployed', data=merged_df)
+plt.title("Estimated Unemployed by Qualification")
+plt.xticks(rotation=45)
+plt.ylim(0, merged_df['estimated_unemployed'].quantile(0.95))
+plt.tight_layout()
+plt.savefig('plots/EstimatedUnemployedByQualification_Boxplot.png')
+
+plt.figure(figsize=(12,6))
+sns.boxplot(x='highest_qualification', y='estimated_unemployed', data=merged_df)
+plt.yscale('log')
+plt.title("Estimated Unemployed by Qualification (log scale)")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig('plots/EstimatedUnemployedByQualification_Boxplot_Log.png')
+
+plt.figure(figsize=(10,6))
+sns.lineplot(x='year', y='estimated_unemployed', data=merged_df, estimator='mean')
+plt.title("Mean Estimated Unemployed by Year")
+plt.tight_layout()
+plt.savefig('plots/MeanEstimatedUnemployedByYear.png')
