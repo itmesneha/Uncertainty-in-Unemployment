@@ -3,7 +3,9 @@ import pandas as pd
 import numpy as np
 import ipfn
 import logging
-# import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 # from sklearn.metrics import mean_absolute_error
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -199,3 +201,22 @@ logging.info(f"Final columns: {merged_df.columns.tolist()}")
 logging.info('Preprocessing complete.')
 merged_df.to_csv("datasets/unemployment_survival_data.csv", index=False)
 logging.info('Data saved to datasets/unemployment_survival_data.csv')
+
+# Select only numeric columns for correlation
+numeric_cols = merged_df.select_dtypes(include=[np.number])
+corr = numeric_cols.corr()
+
+# plt.figure(figsize=(8,6))
+# sns.heatmap(corr, annot=True, cmap='coolwarm')
+# plt.title("Correlation Matrix of Numeric Variables (after IPF)")
+# plt.xticks(rotation=0)
+# plt.show()
+
+# Example: mean estimated_unemployed by age and sex
+pivot = merged_df.pivot_table(index='age', columns='sex', values='estimated_unemployed', aggfunc='mean')
+ax = pivot.plot(kind='bar', figsize=(10,6))
+plt.title("Mean Estimated Unemployed by Age and Sex")
+plt.ylabel("Mean Estimated Unemployed")
+plt.xticks(rotation=0)
+# plt.show()
+plt.savefig('plots/MeanEstimatedUnemployedByAgeAndSex.png')
