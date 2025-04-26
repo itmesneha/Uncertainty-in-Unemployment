@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from loss import elbo_loss
+from loss import elbo_loss, elbo_loss_log_normal
 
 def train_bayesian_survival_model(model, 
                                   dataloader,
                                   epochs=1, 
-                                  learning_rate=1e-3, 
+                                  learning_rate=1e-4, 
                                   device=torch.device("mps" if torch.backends.mps.is_available() else "cpu"),
                                   print_every=100):
     """
@@ -39,11 +39,12 @@ def train_bayesian_survival_model(model,
             optimizer.zero_grad()
 
             # Forward pass
-            lambda_pred = model(x_cat, x_cont)  # Predict hazard rates
+            mu, sigma = model(x_cat, x_cont)  # Predict hazard rates
             kl_term = model.kl_loss()     # Compute KL divergence
 
+            
             # ELBO loss
-            loss = elbo_loss(lambda_pred, duration_train, event_train, kl_term)
+            loss = elbo_loss_log_normal(mu, sigma, duration_train, event_train, kl_term)
 
             # Backpropagation
             loss.backward()
