@@ -72,15 +72,16 @@ class BayesianRiskNetwork(nn.Module):
         self.bn2 = nn.BatchNorm1d(70)
         self.dropout2 = nn.Dropout(0.4)
 
-        self.linear_out = VariationalLinear(70, 1)
+        self.linear_out = VariationalLinear(70, 2)
 
     def forward(self, x_cat, x_cont):
         x = torch.cat([self.embed(x_cat), self.cont_block(x_cont)], dim=1)
         x = self.dropout1(F.relu(self.bn1(self.linear1(x))))
         x = self.dropout2(F.relu(self.bn2(self.linear2(x))))
         out = self.linear_out(x)
-        lambda_ = torch.exp(out)
-        return lambda_
+        mu = out[:, 0:1]
+        sigma = torch.exp(out[:, 1:2])  # Ensure positivity
+        return mu, sigma
     
     def kl_loss(self):
         return self.linear1.kl_loss() + self.linear2.kl_loss() + self.linear_out.kl_loss()
