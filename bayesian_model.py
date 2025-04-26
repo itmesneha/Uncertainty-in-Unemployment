@@ -137,7 +137,7 @@ with pm.Model() as unemployment_model:
 
     # Plot posterior parameter distributions
     az.plot_posterior(trace, var_names=["alpha", "beta_year", "beta_sex", "sigma"], hdi_prob=0.95)
-    plt.savefig('plots/posterior_parameter_plots_optimized.png')
+    plt.savefig('plots/posterior_parameter_plots.png')
     logging.info('Saved posterior parameter plots.')
 
     # OPTIMIZATION: Generate fewer posterior predictive samples
