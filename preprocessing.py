@@ -187,6 +187,9 @@ if not np.allclose(prob_sums, 1.0, rtol=0.01):
 
 merged_df['estimated_unemployed'] = merged_df['joint_probability_qual_age_sex'] * merged_df['hybrid_probability']
 
+# Convert to integer
+merged_df['estimated_unemployed'] = merged_df['estimated_unemployed'].round().astype(int)
+
 logging.info("Final merged DataFrame preview:")
 logging.info(merged_df.tail(100))
 
