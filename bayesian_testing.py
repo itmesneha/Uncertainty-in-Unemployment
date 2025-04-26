@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt
 import sys
 import requests
+import arviz as az
 
 # Import check_model_fit function
 sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
@@ -93,3 +94,16 @@ observed_durations_weeks = np.exp(observed_durations)
 check_model_fit(observed_durations_weeks, all_pred_samples, plot_path='plots/ppc_plot.png')
 
 logging.info('Model fit checking complete. Posterior Predictive Check plot saved to plots/ppc_plot.png')
+
+# Load your trace
+trace = az.from_netcdf('models/bayesian_unemployment_trace.nc')
+
+# Compute WAIC
+waic = az.waic(trace)
+print("WAIC:")
+print(waic)
+
+# Compute LOO
+loo = az.loo(trace)
+print("\nLOO:")
+print(loo)
