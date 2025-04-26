@@ -44,13 +44,3 @@ plt.savefig('plots/posterior_predictive_dist.png')
 print(f"Prediction for year={new_year}, sex={'female' if new_sex_code==1 else 'male'}, age group={new_age_group}:")
 print(f"Median Prediction: {np.median(lognormal_samples):.2f} weeks")
 print(f"95% Credible Interval: [{np.percentile(lognormal_samples,2.5):.2f}, {np.percentile(lognormal_samples,97.5):.2f}] weeks")
-
-# # Real observed durations (approximation)
-# observed_durations = (lower + upper) / 2
-# observed_durations[observed_durations <= 0] = 1  # Just like you did earlier
-
-# # Posterior predictive samples
-# predicted_samples = lognormal_samples
-
-# # Call the function
-# check_model_fit(observed_durations, predicted_samples, plot_path='plots/ppc_plot.png')

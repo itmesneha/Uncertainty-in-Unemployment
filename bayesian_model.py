@@ -2,148 +2,173 @@ import pymc as pm
 import numpy as np
 import pandas as pd
 import logging
-import requests
 import arviz as az
 import matplotlib.pyplot as plt
+import os
 
+# Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-logging.info("Starting bayesian model script...")
+logging.info("Starting optimized Bayesian model script...")
 
-def get_data(dataset_id, sample=None):
-    logging.info(f"Fetching data for dataset: {dataset_id}")
-    url = "https://data.gov.sg/api/action/datastore_search?resource_id=" + dataset_id
-    params = {'offset': 0}
-    dfs = []
+# Create plots and models directory if they don't exist
+os.makedirs('plots', exist_ok=True)
+os.makedirs('models', exist_ok=True)
 
-    while True:
-        response = requests.get(url, params=params).json()
-        df = pd.DataFrame(response['result']['records'])
-        dfs.append(df)
-        if response['result']['_links']['next'] is None or (sample is not None and len(dfs) * 100 >= sample):
-            break
-        params['offset'] += 100
+# Load data
+logging.info("Loading dataset from CSV...")
+df = pd.read_csv('datasets/unemployment_survival_data.csv')
+logging.info(f"Original dataset shape: {df.shape}")
 
-    full_df = pd.concat(dfs, ignore_index=True)
-    if sample is not None:
-        full_df = full_df.head(sample)
-    full_df = full_df.drop(['_id'], axis=1)
-    logging.info(f"Finished loading dataset: {dataset_id} with shape {full_df.shape}")
-    return full_df
+# OPTIMIZATION: Subsample the data to speed up training
+# Taking a random 25% of the data
+subsample_fraction = 0.25
+df = df.sample(frac=subsample_fraction, random_state=42)
+logging.info(f"Subsampled dataset shape: {df.shape}")
 
-# Prepare data
-dataset_id = "d_db95e15ceffaa368a043310479dc7d57"
-df_sex_age_unemployed_duration = get_data(dataset_id, 2000)
-logging.info('Dataset loading complete.')
+# Keep only necessary columns
+df = df[['year', 'highest_qualification', 'age', 'sex', 'duration', 'estimated_unemployed']]
 
-df_sex_age_unemployed_duration[['unemployed']] = df_sex_age_unemployed_duration[['unemployed']].apply(pd.to_numeric, errors='coerce')
-
-# Convert duration categories to lower and upper bounds
+# Define duration map
 duration_map = {
     'under 5': (0, 4),
     '5 to 9': (5, 9),
     '10 to 14': (10, 14),
     '15 to 19': (15, 19),
-    '20 to 24': (20,24),
-    '25 to 29': (25,29),
-    '30 to 39': (30,39),
+    '20 to 24': (20, 24),
+    '25 to 29': (25, 29),
+    '30 to 39': (30, 39),
     '40 to 51': (40, 51),
-    '52 and over': (52, 104)  # Set reasonable upper limit
+    '52 and over': (52, 104)
 }
 
-df_sex_age_unemployed_duration['lower_bound'] = df_sex_age_unemployed_duration['duration'].map(lambda x: duration_map[x][0])
-df_sex_age_unemployed_duration['upper_bound'] = df_sex_age_unemployed_duration['duration'].map(lambda x: duration_map[x][1])
+df['lower_bound'] = df['duration'].map(lambda x: duration_map[x][0])
+df['upper_bound'] = df['duration'].map(lambda x: duration_map[x][1])
 
-# Encode sex as 0/1
+# Encode categorical variables
 sex_map = {'male': 0, 'female': 1}
-df_sex_age_unemployed_duration['sex_code'] = df_sex_age_unemployed_duration['sex'].map(sex_map)
+df['sex_code'] = df['sex'].map(sex_map)
 
-year = df_sex_age_unemployed_duration['year'].astype(float).to_numpy()
-sex = df_sex_age_unemployed_duration['sex_code'].astype(float).to_numpy()
-age_groups = df_sex_age_unemployed_duration['age'].unique()
-age_idx = pd.Categorical(df_sex_age_unemployed_duration['age'], categories=age_groups).codes
+qualifications = df['highest_qualification'].unique()
+qualification_idx = pd.Categorical(df['highest_qualification'], categories=qualifications).codes
 
+ages = df['age'].unique()
+age_idx = pd.Categorical(df['age'], categories=ages).codes
+
+# Prepare numpy arrays
+year = df['year'].astype(float).to_numpy()
+year_mean = np.mean(year)
+year = year - year_mean
+np.save('models/year_mean.npy', year_mean)
+sex = df['sex_code'].astype(float).to_numpy()
+lower = df['lower_bound'].to_numpy()
+upper = df['upper_bound'].to_numpy()
+estimated_unemployed = df['estimated_unemployed'].astype(float).to_numpy()
+
+# Raw lower and upper bounds
+lower = np.clip(lower, a_min=1e-3, a_max=None)
+upper = np.clip(upper, a_min=1e-3, a_max=None)
+
+# Midpoint before log
+midpoint = (lower + upper) / 2
+midpoint = np.clip(midpoint, a_min=1e-3, a_max=None)
+
+# Log transform
+observed_duration = np.log(midpoint)
+
+# For Censored bounds, also log lower and upper
+lower = np.log(lower)
+upper = np.log(upper)
+# observed_duration = np.clip(observed_duration, a_min=1e-3, a_max=None)  # Clip BEFORE log
+
+logging.info("Preprocessing complete.")
+
+# Build Model
 with pm.Model() as unemployment_model:
-    # Priors for coefficients
-    alpha = pm.Normal('alpha', mu=20, sigma=10)
+    # Priors
+    alpha = pm.Normal('alpha', mu=3, sigma=2)
     beta_year = pm.Normal('beta_year', mu=0, sigma=1)
-    beta_sex = pm.Normal('beta_sex', mu=0, sigma=2)
-    sigma_age = pm.HalfNormal('sigma_age', sigma=5)
-    beta_age = pm.Normal('beta_age', mu=0, sigma=sigma_age, shape=len(age_groups))
+    beta_sex = pm.Normal('beta_sex', mu=0, sigma=1)
+    sigma_age = pm.HalfNormal('sigma_age', sigma=1)
+    sigma_qualification = pm.HalfNormal('sigma_qualification', sigma=1)
 
-    lin_pred = alpha + beta_year * year + beta_sex * sex + beta_age[age_idx]
-    mu = pm.math.exp(lin_pred)
+    beta_age = pm.Normal('beta_age', mu=0, sigma=sigma_age, shape=len(ages))
+    beta_qualification = pm.Normal('beta_qualification', mu=0, sigma=sigma_qualification, shape=len(qualifications))
 
+    # Linear predictor
+    lin_pred = (alpha
+                + beta_year * year
+                + beta_sex * sex
+                + beta_age[age_idx]
+                + beta_qualification[qualification_idx])
+
+    # mu = pm.math.exp(lin_pred)
+
+    # Likelihood noise (sigma for LogNormal)
     sigma = pm.HalfNormal('sigma', sigma=1)
 
-    lower = df_sex_age_unemployed_duration['lower_bound'].to_numpy()
-    upper = df_sex_age_unemployed_duration['upper_bound'].to_numpy()
-
-    observed_duration = (lower + upper) / 2
-    observed_duration[observed_duration <= 0] = 1 
-
-    # Correct usage: assign directly, do not call as a function, do not use name=
+    # Censored observed data
     duration_obs = pm.Censored(
-        "duration_obs",  # <<< Name (string)
-        pm.LogNormal.dist(mu=pm.math.log(mu), sigma=sigma),
+        "duration_obs",
+        pm.StudentT.dist(nu=3, mu=lin_pred, sigma=sigma),
         lower=lower,
         upper=upper,
         observed=observed_duration
     )
-    trace = pm.sample(2000, tune=1000, target_accept=0.95, max_treedepth = 15)
 
-    print(az.summary(trace, round_to=2))
+    # OPTIMIZATION
+    # Fewer samples
+    n_samples = 500  # Reduced from 2000
+    n_tune = 300     # Reduced from 1000
+    
+    #  NUTS sampler with optimized parameters
+    trace = pm.sample(
+        n_samples, 
+        tune=n_tune, 
+        target_accept=0.95,   
+        max_treedepth=15,    
+        cores=8,             
+        chains = 4,
+        return_inferencedata=True
+    )
 
-    az.plot_posterior(trace, var_names=["alpha", "beta_year", "beta_sex", "sigma_age", "sigma"], hdi_prob=0.95)
-    # plt.show()
-    plt.savefig('plots/posterior_parameter_plots.png')
-
-    # Save trace to a NetCDF file
+    # Save trace
     az.to_netcdf(trace, 'models/bayesian_unemployment_trace.nc')
+    logging.info('Saved posterior trace to models/bayesian_unemployment_trace.nc')
 
+    # Plot posterior parameter distributions
+    az.plot_posterior(trace, var_names=["alpha", "beta_year", "beta_sex", "sigma"], hdi_prob=0.95)
+    plt.savefig('plots/posterior_parameter_plots_optimized.png')
+    logging.info('Saved posterior parameter plots.')
 
-    # # inference
+    # OPTIMIZATION: Generate fewer posterior predictive samples
+    # Take only a subset of posterior samples to generate predictions
+    posterior_samples = az.extract(trace, num_samples=100)  # Reduced number of samples
 
-    # logging.info('Inference beginning...')
-    # # Example input
-    # new_year = 2025
-    # new_sex_code = 1  # female
-    # new_age_group = "30-39"
+    alpha_samples = posterior_samples['alpha'].values
+    beta_year_samples = posterior_samples['beta_year'].values
+    beta_sex_samples = posterior_samples['beta_sex'].values
+    sigma_samples = posterior_samples['sigma'].values
+    beta_age_samples = posterior_samples['beta_age'].values.T
+    beta_qualification_samples = posterior_samples['beta_qualification'].values.T
 
-    # # Find the index of the age group
-    # age_groups = df_sex_age_unemployed_duration['age'].unique()
-    # new_age_idx = np.where(age_groups == new_age_group)[0][0]  # <-- use a new variable 'new_age_idx'
+    n_samples = alpha_samples.shape[0]
+    n_data = len(year)
 
-    # posterior_samples = az.extract(trace)
+    lin_pred_samples = (
+        alpha_samples[:, None]
+        + beta_year_samples[:, None] * year
+        + beta_sex_samples[:, None] * sex
+        + beta_age_samples[:, age_idx]
+        + beta_qualification_samples[np.arange(n_samples)[:, None], qualification_idx[None, :]]
+    )
 
-    # alpha_samples = posterior_samples['alpha'].values           # shape (8000,)
-    # beta_year_samples = posterior_samples['beta_year'].values   # shape (8000,)
-    # beta_sex_samples = posterior_samples['beta_sex'].values     # shape (8000,)
-    # beta_age_samples = posterior_samples['beta_age'][:, new_age_idx].values  # shape (8000,)
-    # sigma_samples = posterior_samples['sigma'].values           # shape (8000,)
+    mu_samples = np.exp(lin_pred_samples)
 
-    # # Now compute the linear predictor
-    # lin_pred_samples = alpha_samples + beta_year_samples * new_year + beta_sex_samples * new_sex_code + beta_age_samples
+    rng = np.random.default_rng(seed=42)
+    lognormal_samples = rng.lognormal(mean=np.log(mu_samples), sigma=sigma_samples[:, None])
 
-    # # Get the mean (mu) for the LogNormal distribution
-    # mu_samples = np.exp(lin_pred_samples)
+    # Save posterior predictive samples
+    np.save('models/lognormal_samples.npy', lognormal_samples)
+    logging.info('Saved posterior predictive samples to models/lognormal_samples.npy')
 
-    # # Sample from the predictive distribution
-    # lognormal_samples = np.random.lognormal(mean=np.log(mu_samples), sigma=sigma_samples, size=len(mu_samples))
-
-    # # Plot
-    # plt.figure(figsize=(10, 6))
-    # plt.hist(lognormal_samples, bins=50, density=True, alpha=0.6, color='g', label='Posterior predictive (with noise)')
-    # plt.xlabel('Unemployment Duration (weeks)')
-    # plt.ylabel('Density')
-    # plt.title('Posterior Predictive Distribution with LogNormal Noise')
-    # plt.legend()
-    # plt.savefig('plots/posterior_predictive_dist.png')
-
-    # # Calculate 95% CI
-    # lower_ci = np.percentile(lognormal_samples, 2.5)
-    # upper_ci = np.percentile(lognormal_samples, 97.5)
-    # median_prediction = np.median(lognormal_samples)
-
-    # print(f"Predicted unemployment duration (weeks):")
-    # print(f"Median: {median_prediction:.2f} weeks")
-    # print(f"95% Credible Interval: [{lower_ci:.2f}, {upper_ci:.2f}] weeks")
+logging.info("Optimized Bayesian model training complete.")
