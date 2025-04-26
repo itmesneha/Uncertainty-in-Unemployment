@@ -5,7 +5,7 @@ from loss import elbo_loss
 
 def train_bayesian_survival_model(model, 
                                   dataloader,
-                                  epochs=1000, 
+                                  epochs=1, 
                                   learning_rate=1e-3, 
                                   device=torch.device("mps" if torch.backends.mps.is_available() else "cpu"),
                                   print_every=100):
@@ -30,20 +30,20 @@ def train_bayesian_survival_model(model,
         total_loss = 0
         total_kl = 0
         for batch in dataloader:
-            x_train, duration_train, event_train, weight_train = batch
-            x_train = x_train.to(device)
+            x_cat, x_cont, duration_train, event_train = batch
+            x_cat = x_cat.to(device)
+            x_cont = x_cont.to(device)
             duration_train = duration_train.to(device)
             event_train = event_train.to(device)
-            weight_train = weight_train.to(device)
-            
+
             optimizer.zero_grad()
 
             # Forward pass
-            lambda_pred = model(x_train)  # Predict hazard rates
+            lambda_pred = model(x_cat, x_cont)  # Predict hazard rates
             kl_term = model.kl_loss()     # Compute KL divergence
 
             # ELBO loss
-            loss = elbo_loss(lambda_pred, duration_train, event_train, kl_term, weight_train)
+            loss = elbo_loss(lambda_pred, duration_train, event_train, kl_term)
 
             # Backpropagation
             loss.backward()

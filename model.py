@@ -2,6 +2,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Normal
+
+
+def sample_half_normal(scale=1.0, shape=(1,)):
+    """Sample sigma from Half-Normal distribution."""
+    return torch.abs(torch.randn(shape) * scale)  # Half-Normal sampling
+
+def compute_embedding_output_size(category_sizes):
+    return sum([min(50, (size // 2) + 1) for size in category_sizes])
+
 class VariationalLinear(nn.Module):
     def __init__(self, in_features, out_features):
         super().__init__()
@@ -25,19 +34,53 @@ class VariationalLinear(nn.Module):
         return kl
 
 
-class BayesianHazardNN(nn.Module):
-    def __init__(self, input_dim, hidden_dim):
+class EmbeddingBlock(nn.Module):
+    def __init__(self, category_sizes):
         super().__init__()
-        self.fc1 = VariationalLinear(input_dim, hidden_dim)
-        self.fc2 = VariationalLinear(hidden_dim, hidden_dim)
-        self.out_layer = VariationalLinear(hidden_dim, 1)
+        self.embeddings = nn.ModuleList([
+            nn.Embedding(num_categories, min(50, (num_categories // 2) + 1))
+            for num_categories in category_sizes
+        ])
 
-    def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        log_lambda = self.out_layer(x)
-        lambda_ = torch.exp(log_lambda)  # Ensure positive hazard
+    def forward(self, x_cat):
+        embedded = [emb(x_cat[:, i]) for i, emb in enumerate(self.embeddings)]
+        return torch.cat(embedded, dim=1)
+    
+
+class ContinuousBlock(nn.Module):
+    def __init__(self, n_cont_features):
+        super().__init__()
+        self.batch_norm = nn.BatchNorm1d(n_cont_features)
+
+    def forward(self, x_cont):
+        return self.batch_norm(x_cont)
+
+
+
+class BayesianRiskNetwork(nn.Module):
+    def __init__(self, category_sizes, n_cont_features):
+        super().__init__()
+        self.embed = EmbeddingBlock(category_sizes)
+        self.cont_block = ContinuousBlock(n_cont_features)
+
+        embedding_output_size = compute_embedding_output_size(category_sizes)
+        self.linear1 = VariationalLinear(embedding_output_size + n_cont_features, 200)
+        self.bn1 = nn.BatchNorm1d(200)
+        self.dropout1 = nn.Dropout(0.6)
+
+        self.linear2 = VariationalLinear(200, 70)
+        self.bn2 = nn.BatchNorm1d(70)
+        self.dropout2 = nn.Dropout(0.4)
+
+        self.linear_out = VariationalLinear(70, 1)
+
+    def forward(self, x_cat, x_cont):
+        x = torch.cat([self.embed(x_cat), self.cont_block(x_cont)], dim=1)
+        x = self.dropout1(F.relu(self.bn1(self.linear1(x))))
+        x = self.dropout2(F.relu(self.bn2(self.linear2(x))))
+        out = self.linear_out(x)
+        lambda_ = torch.exp(out)
         return lambda_
-
+    
     def kl_loss(self):
-        return self.fc1.kl_loss() + self.fc2.kl_loss() + self.out_layer.kl_loss()
+        return self.linear1.kl_loss() + self.linear2.kl_loss() + self.linear_out.kl_loss()

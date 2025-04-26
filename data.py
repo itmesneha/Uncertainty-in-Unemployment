@@ -3,15 +3,20 @@ from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
 
+import torch
+from torch.utils.data import Dataset
+import numpy as np
+import pandas as pd
+
 class UnemploymentSurvivalDataset(Dataset):
-    def __init__(self, dataframe, censoring_rate=0.3, seed=42):
+    def __init__(self, dataframe_path, censoring_rate=0.3, seed=42, normalize=True):
         """
         Args:
-            dataframe: Pandas DataFrame containing the data.
-            censoring_rate: Probability of censoring for the '52 and over' bucket.
-            seed: Random seed for reproducibility.
+            dataframe_path (str): Path to the CSV file.
+            censoring_rate (float): Probability of censoring for '52 and over'.
+            seed (int): Random seed for reproducibility.
         """
-        self.df = pd.read_csv(dataframe)
+        self.df = pd.read_csv(dataframe_path)
 
         # Map duration buckets to numeric midpoints
         self.duration_map = {
@@ -42,22 +47,55 @@ class UnemploymentSurvivalDataset(Dataset):
         # Define event flag: 1 = observed, 0 = censored
         self.df['event'] = 1 - self.df['is_censored']
 
+        # Prepare categorical and continuous features
+        self.df['year_cat'] = self.df['year'].map(self.year_encoder)
+        self.df['qual_cat'] = self.df['highest_qualification'].map(self.qual_encoder)
+        self.df['age_cat'] = self.df['age'].map(self.age_encoder)
+        self.df['sex_cat'] = self.df['sex'].map(self.sex_encoder)
+
+        # Continuous features (can add more continuous features here if needed)
+        self.continuous_features = ['estimated_unemployed']
+        self.normalize = normalize
+        if self.normalize:
+            self.cont_mean = self.df[self.continuous_features].mean().values
+            self.cont_std = self.df[self.continuous_features].std().values
+
 
     def __len__(self):
-        return len(self.df)
+        return 100
+    
+
+    def get_category_sizes(self):
+        return [
+            len(self.year_encoder),
+            len(self.qual_encoder),
+            len(self.age_encoder),
+            len(self.sex_encoder)
+        ]
+
+    def get_continuous_feature_count(self):
+        return len(self.continuous_features)
+    
 
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
-        year = self.year_encoder[row['year']]
-        qual = self.qual_encoder[row['highest_qualification']]
-        age = self.age_encoder[row['age']]
-        sex = self.sex_encoder[row['sex']]
 
-        x = torch.tensor([year, qual, age, sex], dtype=torch.float32)
+        # Categorical features as separate columns for embedding
+        x_cat = torch.tensor([
+            row['year_cat'],
+            row['qual_cat'],
+            row['age_cat'],
+            row['sex_cat']
+        ], dtype=torch.long)
+
+        # Continuous features as float tensor
+        x_cont = torch.tensor([row[feature] for feature in self.continuous_features], dtype=torch.float32)
+
+        if self.normalize:
+            x_cont = (x_cont - self.cont_mean) / self.cont_std
+            x_cont = x_cont.to(torch.float32)
+
         duration = torch.tensor(row['duration_numeric'], dtype=torch.float32).unsqueeze(0)
         event = torch.tensor(row['event'], dtype=torch.float32).unsqueeze(0)
-        weight = torch.tensor(row['estimated_unemployed'], dtype=torch.float32).unsqueeze(0)
 
-        return x, duration, event, weight
-
-
+        return x_cat, x_cont, duration, event
