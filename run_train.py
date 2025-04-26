@@ -6,8 +6,6 @@ from model import BayesianRiskNetwork
 from train import train_bayesian_survival_model
 
 def run_train(dataframe,
-              input_dim=4,
-              hidden_dim=64,
               batch_size=128,
               epochs=1000,
               learning_rate=1e-3,
