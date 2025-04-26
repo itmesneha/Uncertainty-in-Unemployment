@@ -2,6 +2,9 @@ import torch
 from torch.utils.data import Dataset
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader, Subset
+
 
 
 class UnemploymentSurvivalDataset(Dataset):
@@ -95,3 +98,18 @@ class UnemploymentSurvivalDataset(Dataset):
         event = torch.tensor(row['event'], dtype=torch.float32).unsqueeze(0)
 
         return x_cat, x_cont, duration, event
+
+
+
+
+def create_train_val_loaders(dataset, val_ratio=0.2, batch_size=64, seed=42):
+    indices = list(range(len(dataset)))
+    train_indices, val_indices = train_test_split(indices, test_size=val_ratio, random_state=seed)
+
+    train_subset = Subset(dataset, train_indices)
+    val_subset = Subset(dataset, val_indices)
+
+    train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False)
+
+    return train_loader, val_loader
