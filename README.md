@@ -31,3 +31,33 @@ This project aims to model the duration of unemployment using advanced Bayesian 
 - Bayesian neural network for survival analysis with variational inference (PyTorch)
 - Posterior predictive checks, WAIC, LOO, and visual diagnostics
 - Flexible, modular codebase for extension and experimentation
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/uncertainty-in-unemployment.git
+   cd uncertainty-in-unemployment
+2. Install dependencies:
+   ```bash
+    pip install -r requirements.txt
+
+## Data Preparation
+
+The preprocessing pipeline fetches, harmonizes, and merges unemployment data by age, sex, qualification, and duration. It uses IPF to estimate joint distributions and produces a synthetic dataset suitable for survival analysis.
+
+- Run preprocessing:
+  ```bash
+   python preprocessing.py
+
+  ## Data Preparation
+
+The preprocessing pipeline fetches, harmonizes, and merges unemployment data by age, sex, qualification, and duration. It uses IPF to estimate joint distributions and produces a synthetic dataset suitable for survival analysis. 
+
+This will:
+- Download and merge datasets
+- Estimate joint distributions using IPF
+- Compute hybrid duration probabilities
+- Output a processed CSV at `datasets/unemployment_survival_data.csv`
+- Generate summary plots in the `plots/` directory
+
