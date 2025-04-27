@@ -63,7 +63,7 @@ This will:
 
 ## Bayesian Modeling
 
-### PyMC Survival Model
+### PyMC Regression Model
 
 **Script:** `bayesian_model.py`
 
@@ -90,4 +90,21 @@ This will:
   python bayesian_model_inference.py
   ```
   - Predicts unemployment duration for new demographic profiles
+ 
+## Neural Network Survival Model
+
+### Variational Bayesian Neural Network (PyTorch)
+
+- **Data loader:** `data.py`
+- **Model:** `model.py`
+- **Training:** `run_train.py`, `train.py`
+- **Loss:** `loss.py` (ELBO for log-normal survival)
+- **Evaluation:** `eval_utils.py`, `mc_sampling.py`
+- **Train the model:** `python run_train.py`
+  - Trains a variational BNN for survival analysis
+  - Supports interval and right-censoring
+- **Monte Carlo survival curve estimation:** `python mc_sampling.py`
+  - Generates survival curves with credible intervals
+  
+
 
