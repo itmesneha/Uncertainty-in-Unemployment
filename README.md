@@ -61,3 +61,20 @@ This will:
 - Output a processed CSV at `datasets/unemployment_survival_data.csv`
 - Generate summary plots in the `plots/` directory
 
+## Bayesian Modeling
+
+### PyMC Survival Model
+
+**Script:** `bayesian_model.py`
+
+**Features:**
+- Models log-unemployment duration as a function of year, sex, age group, and qualification
+- Handles interval-censored data using `pm.Censored`
+- Uses a Student-t likelihood for robustness
+- Outputs posterior samples and diagnostics
+- Run the model:
+  ```bash
+    python bayesian_model.py
+-- Posterior samples are saved to models/bayesian_unemployment_trace.nc
+Posterior predictive samples are saved to models/lognormal_samples.npy
+Diagnostic plots are saved in plots/
