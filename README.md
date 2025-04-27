@@ -108,3 +108,16 @@ This will:
   
 
 
+## Model Evaluation & Visualization
+
+- **Posterior predictive checks:**  
+  Visualize observed vs. predicted duration distributions, including credible intervals.
+
+- **Summary plots:**  
+  Boxplots and heatmaps for estimated unemployed by qualification, age, and sex.  
+  Time trends for mean estimated unemployed.
+
+- **Parameter posteriors:**  
+  Visualize uncertainty in model parameters.
+
+All plots are saved in the `plots/` directory.
