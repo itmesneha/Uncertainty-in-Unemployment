@@ -76,6 +76,18 @@ This will:
   ```bash
     python bayesian_model.py
   ```
-   - Posterior samples are saved to models/bayesian_unemployment_trace.nc
-   Posterior predictive samples are saved to models/lognormal_samples.npy
-   Diagnostic plots are saved in plots/
+   - Posterior samples are saved to `models/bayesian_unemployment_trace.nc`
+   - Posterior predictive samples are saved to `models/lognormal_samples.npy`
+   - Diagnostic plots are saved in `plots/`
+- Posterior predictive checks and model fit:
+  ```bash
+    python bayesian_testing.py
+  ```
+  - Compares observed and predicted durations
+  - Computes WAIC and LOO for model comparison
+- Inference for new cases
+  ```bash
+  python bayesian_model_inference.py
+  ```
+  - Predicts unemployment duration for new demographic profiles
+
