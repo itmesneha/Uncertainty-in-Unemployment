@@ -23,7 +23,7 @@ model = load_model_from_checkpoint(
 ######################################
 # Load Custom Input File (CHANGE HERE)
 ######################################
-input_file = "datasets/qual_effect.json"  # Change this to the desired JSON file
+input_file = "datasets/year_effect.json"  # Change this to the desired JSON file
 with open(input_file, "r") as f:
     custom_inputs = json.load(f)
 
