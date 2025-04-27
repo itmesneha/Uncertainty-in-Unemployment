@@ -124,6 +124,8 @@ This will:
 All plots are saved in the `plots/` directory.
 
 ## Project Structure
+
+Bayesian model traces `.nc` and `.npy` files are on [https://drive.google.com/drive/folders/1rX6WC-B8bDQqKv6A1tP81KM9pHHTnHUf?usp=drive_link](Google Drive).
 ```
 .
 ├── bayesian_model.py         # PyMC Bayesian survival model
