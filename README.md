@@ -144,3 +144,16 @@ All plots are saved in the `plots/` directory.
 ├── requirements.txt          # Python dependencies
 └── README.md                 # This file
 ```
+
+## References
+
+1. Ministry of Manpower (2024), *Unemployed Residents Aged 15 Years and Over by Age and Duration of Unemployment*, data.gov, [https://data.gov.sg/datasets/d_db95e15ceffaa368a043310479dc7d57/view](https://data.gov.sg/datasets/d_db95e15ceffaa368a043310479dc7d57/view)
+
+2. Ministry of Manpower (2024), *Unemployed Residents Aged 15 Years and Over by Highest Qualification Attained and Duration of Unemployment*, data.gov, [https://data.gov.sg/datasets/d_a0ca632fd1d6ff841f0e47298a9ab589/view](https://data.gov.sg/datasets/d_a0ca632fd1d6ff841f0e47298a9ab589/view)
+
+3. Ministry of Manpower (2024), *Median Duration of Unemployment*, data.gov, [https://data.gov.sg/datasets/d_c01a3210fb10f1a52676f97498d4ec2c/view](https://data.gov.sg/datasets/d_c01a3210fb10f1a52676f97498d4ec2c/view)
+
+
+## License
+
+This project is licensed under the MIT License.
