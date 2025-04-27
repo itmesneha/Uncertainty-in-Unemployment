@@ -153,3 +153,12 @@ All plots are saved in the `plots/` directory.
 2. Ministry of Manpower (2024), *Unemployed Residents Aged 15 Years and Over by Highest Qualification Attained and Duration of Unemployment*, data.gov, [https://data.gov.sg/datasets/d_a0ca632fd1d6ff841f0e47298a9ab589/view](https://data.gov.sg/datasets/d_a0ca632fd1d6ff841f0e47298a9ab589/view)
 
 3. Ministry of Manpower (2024), *Median Duration of Unemployment*, data.gov, [https://data.gov.sg/datasets/d_c01a3210fb10f1a52676f97498d4ec2c/view](https://data.gov.sg/datasets/d_c01a3210fb10f1a52676f97498d4ec2c/view)
+
+4. Ganjali, M., & Baghfalaki, T. (2012). *Bayesian Analysis of Unemployment Duration Data in the Presence of Right and Interval Censoring*. Communications in Statistics - Theory and Methods, 41(15), 2738-2751.
+
+5. Wong, S. C. (2018). *Transformation of Employment Patterns and Need for Career Services in Modern Singapore*. Singapore Economic Review, 63(S1), 229-246.
+
+6. Boškoski, P., Perne, M., Rameša, M., & Boshkoska, B. M. (2021). *Variational Bayes survival analysis for unemployment modelling*. Knowledge-Based Systems, 229, 107335.
+
+7. Ganjali, M., Baghfalaki, T., Berridge, D., Shahid Beheshti University, Shahid Beheshti University, & Lancaster University. (2009). *A Bayesian analysis of unobserved heterogeneity for unemployment duration data in the presence of interval censoring*. In International Econometric Review (IER) (p. 25).
+
