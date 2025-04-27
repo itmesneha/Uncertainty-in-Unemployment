@@ -123,6 +123,7 @@ This will:
 All plots are saved in the `plots/` directory.
 
 ## Project Structure
+```
 .
 ├── bayesian_model.py         # PyMC Bayesian survival model
 ├── bayesian_testing.py       # Posterior predictive checks, WAIC, LOO
@@ -142,3 +143,4 @@ All plots are saved in the `plots/` directory.
 ├── plots/                    # All generated plots
 ├── requirements.txt          # Python dependencies
 └── README.md                 # This file
+```
