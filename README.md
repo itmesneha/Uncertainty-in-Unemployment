@@ -14,7 +14,6 @@ This repository provides a full pipeline for analyzing unemployment duration dat
 - [Model Evaluation & Visualization](#model-evaluation--visualization)
 - [Project Structure](#project-structure)
 - [References](#references)
-- [License](#license)
 
 ## Overview
 
@@ -154,8 +153,3 @@ All plots are saved in the `plots/` directory.
 2. Ministry of Manpower (2024), *Unemployed Residents Aged 15 Years and Over by Highest Qualification Attained and Duration of Unemployment*, data.gov, [https://data.gov.sg/datasets/d_a0ca632fd1d6ff841f0e47298a9ab589/view](https://data.gov.sg/datasets/d_a0ca632fd1d6ff841f0e47298a9ab589/view)
 
 3. Ministry of Manpower (2024), *Median Duration of Unemployment*, data.gov, [https://data.gov.sg/datasets/d_c01a3210fb10f1a52676f97498d4ec2c/view](https://data.gov.sg/datasets/d_c01a3210fb10f1a52676f97498d4ec2c/view)
-
-
-## License
-
-This project is licensed under the MIT License.
