@@ -1,5 +1,7 @@
 # Uncertainty in Unemployment: Bayesian Survival Analysis
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 This repository provides a full pipeline for analyzing unemployment duration data using Bayesian survival analysis. The workflow includes data preprocessing, joint distribution estimation via Iterative Proportional Fitting (IPF), Bayesian model fitting (with both PyMC and Bayesian neural networks), and comprehensive model evaluation and visualization.
 
 # Table of Contents
