@@ -19,12 +19,6 @@ logging.info("Loading dataset from CSV...")
 df = pd.read_csv('datasets/unemployment_survival_data.csv')
 logging.info(f"Original dataset shape: {df.shape}")
 
-# OPTIMIZATION: Subsample the data to speed up training
-# Taking a random 25% of the data
-subsample_fraction = 0.25
-df = df.sample(frac=subsample_fraction, random_state=42)
-logging.info(f"Subsampled dataset shape: {df.shape}")
-
 # Keep only necessary columns
 df = df[['year', 'highest_qualification', 'age', 'sex', 'duration', 'estimated_unemployed']]
 
@@ -115,10 +109,9 @@ with pm.Model() as unemployment_model:
         observed=observed_duration
     )
 
-    # OPTIMIZATION
-    # Fewer samples
-    n_samples = 500  # Reduced from 2000
-    n_tune = 300     # Reduced from 1000
+
+    n_samples = 2000 
+    n_tune = 1000     
     
     #  NUTS sampler with optimized parameters
     trace = pm.sample(
@@ -143,7 +136,7 @@ with pm.Model() as unemployment_model:
 
     # OPTIMIZATION: Generate fewer posterior predictive samples
     # Take only a subset of posterior samples to generate predictions
-    posterior_samples = az.extract(trace, num_samples=100)  # Reduced number of samples
+    posterior_samples = az.extract(trace)  # Reduced number of samples
 
     alpha_samples = posterior_samples['alpha'].values
     beta_year_samples = posterior_samples['beta_year'].values
@@ -171,5 +164,10 @@ with pm.Model() as unemployment_model:
     # Save posterior predictive samples
     np.save('models/lognormal_samples.npy', lognormal_samples)
     logging.info('Saved posterior predictive samples to models/lognormal_samples.npy')
+
+    # Print Bayesian Inference Summary
+    logging.info("Printing Bayesian inference summary for model parameters...")
+    inference_summary = az.summary(trace, hdi_prob=0.95)
+    print(inference_summary)
 
 logging.info("Optimized Bayesian model training complete.")
