@@ -121,3 +121,24 @@ This will:
   Visualize uncertainty in model parameters.
 
 All plots are saved in the `plots/` directory.
+
+## Project Structure
+.
+├── bayesian_model.py                # PyMC Bayesian survival model
+├── bayesian_testing.py              # Posterior predictive checks, WAIC, LOO
+├── bayesian_model_inference.py      # Posterior predictive inference for new cases
+├── data.py                          # PyTorch Dataset and DataLoader utilities
+├── model.py                         # Bayesian neural network model (PyTorch)
+├── train.py                         # Training loop for neural network
+├── run_train.py                     # Training entry point
+├── loss.py                          # ELBO loss for survival analysis
+├── eval_utils.py                    # Model loading and evaluation utilities
+├── mc_sampling.py                   # Monte Carlo survival curve estimation
+├── preprocessing.py                 # Data fetching, IPF, and preprocessing
+├── utils/
+│   └── bayesian_check_model_fit.py  # Posterior predictive check plotting
+├── datasets/                        # Processed and raw data
+├── models/                          # Saved model traces and parameters
+├── plots/                           # All generated plots
+├── requirements.txt                 # Python dependencies
+└── README.md                        # This file
