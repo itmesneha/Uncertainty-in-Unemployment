@@ -49,7 +49,7 @@ def run_train(dataframe,
         learning_rate=learning_rate,
         device=device,
         print_every=print_every,
-        eval_every=10
+        eval_every=2
     )
 
     print("✅ Training finished successfully.")
@@ -57,4 +57,4 @@ def run_train(dataframe,
 
 if __name__ == "__main__":
     dataframe = "datasets/unemployment_survival_data.csv"
-    run_train(dataframe=dataframe, epochs=5000, print_every=10)
+    run_train(dataframe=dataframe, epochs=200, print_every=2)

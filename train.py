@@ -22,22 +22,24 @@ def train_bayesian_survival_model(model,
         model.train()
         total_loss = 0
         total_kl = 0
-
+        total_kl_ratio = 0
         for batch in train_loader:
             x_cat, x_cont, duration, event = [b.to(device) for b in batch]
 
             optimizer.zero_grad()
             mu, sigma = model(x_cat, x_cont)
             kl = model.kl_loss()
-            loss = elbo_loss_log_normal(mu, sigma, duration, event, kl)
+            log_likelihood, loss = elbo_loss_log_normal(mu, sigma, duration, event, kl)
             loss.backward()
             optimizer.step()
 
             total_loss += loss.item()
             total_kl += kl.item()
+            total_kl_ratio += kl.item() / abs(log_likelihood.item())
 
         avg_train_loss = total_loss / len(train_loader)
         avg_kl = total_kl / len(train_loader)
+        avg_kl_ratio = total_kl_ratio / len(train_loader)
 
         # Evaluate on validation set
         if epoch % eval_every == 0 or epoch == epochs - 1:
@@ -48,11 +50,11 @@ def train_bayesian_survival_model(model,
                     x_cat, x_cont, duration, event = [b.to(device) for b in batch]
                     mu, sigma = model(x_cat, x_cont)
                     kl = model.kl_loss()
-                    loss = elbo_loss_log_normal(mu, sigma, duration, event, kl)
-                    val_loss += loss.item()
+                    log_likelihood,valloss = elbo_loss_log_normal(mu, sigma, duration, event, kl)
+                    val_loss += valloss.item()
             avg_val_loss = val_loss / len(val_loader)
 
-            print(f"Epoch {epoch}, Train Loss: {avg_train_loss:.4f}, KL: {avg_kl:.4f}, Val Loss: {avg_val_loss:.4f}")
+            print(f"Epoch {epoch}, Train Loss: {avg_train_loss:.4f}, KL: {avg_kl:.4f}, Val Loss: {avg_val_loss:.4f}, KL Ratio: {avg_kl_ratio:.4f}") 
 
             # Checkpointing and early stopping
             if avg_val_loss < best_val_loss - 1e-4:

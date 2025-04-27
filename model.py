@@ -27,7 +27,7 @@ class VariationalLinear(nn.Module):
         return F.linear(x, weight, bias)
 
     def kl_loss(self):
-        prior = Normal(0, 1)
+        prior = Normal(0, 0.5)
         q_weight = Normal(self.weight_mu, torch.exp(self.weight_log_sigma))
         q_bias = Normal(self.bias_mu, torch.exp(self.bias_log_sigma))
         kl = torch.distributions.kl_divergence(q_weight, prior).sum() + torch.distributions.kl_divergence(q_bias, prior).sum()
@@ -64,24 +64,19 @@ class BayesianRiskNetwork(nn.Module):
         self.cont_block = ContinuousBlock(n_cont_features)
 
         embedding_output_size = compute_embedding_output_size(category_sizes)
-        self.linear1 = VariationalLinear(embedding_output_size + n_cont_features, 200)
-        self.bn1 = nn.BatchNorm1d(200)
+        self.linear1 = VariationalLinear(embedding_output_size + n_cont_features, 32)
+        self.bn1 = nn.BatchNorm1d(32)
         self.dropout1 = nn.Dropout(0.6)
 
-        self.linear2 = VariationalLinear(200, 70)
-        self.bn2 = nn.BatchNorm1d(70)
-        self.dropout2 = nn.Dropout(0.4)
-
-        self.linear_out = VariationalLinear(70, 2)
+        self.linear_out = VariationalLinear(32, 2)
 
     def forward(self, x_cat, x_cont):
         x = torch.cat([self.embed(x_cat), self.cont_block(x_cont)], dim=1)
         x = self.dropout1(F.relu(self.bn1(self.linear1(x))))
-        x = self.dropout2(F.relu(self.bn2(self.linear2(x))))
         out = self.linear_out(x)
         mu = out[:, 0:1]
         sigma = torch.exp(out[:, 1:2])  # Ensure positivity
         return mu, sigma
     
     def kl_loss(self):
-        return self.linear1.kl_loss() + self.linear2.kl_loss() + self.linear_out.kl_loss()
+        return self.linear1.kl_loss() + self.linear_out.kl_loss()
