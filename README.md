@@ -75,6 +75,7 @@ This will:
 - Run the model:
   ```bash
     python bayesian_model.py
--- Posterior samples are saved to models/bayesian_unemployment_trace.nc
-Posterior predictive samples are saved to models/lognormal_samples.npy
-Diagnostic plots are saved in plots/
+  ```
+   - Posterior samples are saved to models/bayesian_unemployment_trace.nc
+   Posterior predictive samples are saved to models/lognormal_samples.npy
+   Diagnostic plots are saved in plots/
