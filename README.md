@@ -1,4 +1,4 @@
-# Uncertainty in Unemployment: Bayesian Survival Analysis
+# Uncertainty in Unemployment: A Bayesian Approach
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
